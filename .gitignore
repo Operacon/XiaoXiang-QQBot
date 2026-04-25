@@ -45,3 +45,5 @@ dependencies/
 
 # pycache
 */__pycache__
+
+src/main/resources/application-local.yml

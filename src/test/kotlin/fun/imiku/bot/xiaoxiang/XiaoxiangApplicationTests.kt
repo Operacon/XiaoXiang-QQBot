@@ -1,4 +1,4 @@
-package org.operacon.xiaoxiang
+package `fun`.imiku.bot.xiaoxiang
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest

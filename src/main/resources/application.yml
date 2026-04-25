@@ -1,3 +1,23 @@
-spring:
-  application:
-    name: xiaoxiang
+server:
+  # 如不使用 Springboot 的 web 能力，可以不监听端口
+  port: -1
+
+shiro:
+  # WebSocket 配置
+  ws:
+    # 访问密钥
+    access-token: "someT0k3n"
+    # 推荐使用 client 模式，也可兼容 Shiro 的 server 模式，详见 Shiro 文档
+    client:
+      enable: true
+      # WebSocket 服务器地址和端口
+      url: "ws://127.0.0.1:3001"
+
+napcat4j:
+  # http api 服务器配置
+  api:
+    # 访问密钥
+    access-token: "someT0k3n"
+    # NapCat http 服务器地址和端口
+    url: "http://127.0.0.1:3002"
+
