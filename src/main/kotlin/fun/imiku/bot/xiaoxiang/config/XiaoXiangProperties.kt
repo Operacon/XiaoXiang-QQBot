@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component
 @ConfigurationProperties(prefix = "xiaoxiang")
 class XiaoXiangProperties {
     var stats: Stats = Stats()
+    var common: Common = Common()
 
     class Stats {
         /**
@@ -18,5 +19,16 @@ class XiaoXiangProperties {
          * 词云使用，超过此长度的消息不会被放进历史
          */
         var maxMessageLength: Long = 140
+    }
+
+    class Common {
+        /**
+         * 发送消息时，随机等待的最多时间。可能有助于风控管理。只有 XXBot 实现的发送函数支持本配置
+         */
+        var sendRandomAwaitMax: Long = 700
+        /**
+         * 发送消息时，随机等待的最少时间。可能有助于风控管理。只有 XXBot 实现的发送函数支持本配置
+         */
+        var sendRandomAwaitMin: Long = 100
     }
 }
