@@ -17,9 +17,6 @@ class MessageUtil {
             options = setOf(RegexOption.IGNORE_CASE)
         )
 
-        @JvmStatic
-        private val markdownImagePatten = Regex("""!\[[^\]]*]\([^)]+\)""")
-
 
         /**
          * 过滤群聊消息中的“无效”成分
@@ -48,7 +45,57 @@ class MessageUtil {
             return message
         }
 
+        /**
+         * plainText 按空格切分
+         */
         @JvmStatic
         fun splitContent(content: String): List<String> = content.split(splitPatten)
+
+        /**
+         * message 按空格和 CQ 码切分
+         */
+        @JvmStatic
+        fun splitMessage(content: String): List<String> {
+            val parts = mutableListOf<String>()
+            val plain = StringBuilder()
+            var index = 0
+
+            while (index < content.length) {
+                if (content[index].isWhitespace()) {
+                    if (plain.isNotEmpty()) {
+                        parts.add(plain.toString())
+                        plain.setLength(0)
+                    }
+                    while (index < content.length && content[index].isWhitespace()) {
+                        index++
+                    }
+                    continue
+                }
+
+                if (content.startsWith("[CQ:", index)) {
+                    if (plain.isNotEmpty()) {
+                        parts.add(plain.toString())
+                        plain.setLength(0)
+                    }
+                    val end = content.indexOf(']', startIndex = index)
+                    if (end >= 0) {
+                        parts.add(content.substring(index, end + 1))
+                        index = end + 1
+                    } else {
+                        parts.add(content.substring(index))
+                        break
+                    }
+                    continue
+                }
+
+                plain.append(content[index])
+                index++
+            }
+
+            if (plain.isNotEmpty()) {
+                parts.add(plain.toString())
+            }
+            return parts
+        }
     }
 }

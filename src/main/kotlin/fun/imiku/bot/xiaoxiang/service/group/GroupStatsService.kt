@@ -44,7 +44,7 @@ class GroupStatsService(
         if (context.split[0] == "小湘") {
             val msgBuilder = ArrayMsgUtils.builder()
                 .reply(context.event.messageId)
-                .at(context.event.userId)
+                .at(context.userId)
                 .text(" ")
             val msg = listOf<() -> Unit>(
                 { msgBuilder.text("潇小湘在线上~") },
@@ -53,19 +53,19 @@ class GroupStatsService(
                 { msgBuilder.text("潇小湘在线上~") },
             )
             msg.random().invoke()
-            context.xxBot.sendGroupMsgWithCount(context.event.groupId, msgBuilder.build())
+            context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
             return ProcessOption.STOP
         }
         if (context.split[0] in setOf("功能", "介绍", "介绍一下", "自我介绍", "help") && context.split.size == 1) {
             val msgBuilder = ArrayMsgUtils.builder()
                 .reply(context.event.messageId)
-                .at(context.event.userId)
+                .at(context.userId)
                 .text(" ")
                 .text(
                     "潇小湘是开源项目，请参照 https://github.com/Operacon/XiaoXiang-QQBot ！" +
                             "bug 反馈或功能需求请联系 bot 主人或开 issue~"
                 )
-            context.xxBot.sendGroupMsgWithCount(context.event.groupId, msgBuilder.build())
+            context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
             return ProcessOption.STOP
         }
         return ProcessOption.CONTINUE
@@ -75,14 +75,14 @@ class GroupStatsService(
      * GroupMessageEvent 统计数量自增
      */
     fun countAll(context: GroupEventContext) {
-        chatAllCounter.merge(context.event.groupId, 1) { old, one -> old + one }
+        chatAllCounter.merge(context.groupId, 1) { old, one -> old + one }
         context.event.arrayMsg.stream()
             .filter { it.type == MsgTypeEnum.image }
-            .forEach { chatImageCounter.merge(context.event.groupId, 1) { old, one -> old + one } }
-        if (context.fContent.isNullOrBlank()) {
-            val count = chatEffectiveCounter.merge(context.event.groupId, 1) { old, one -> old + one }
+            .forEach { chatImageCounter.merge(context.groupId, 1) { old, one -> old + one } }
+        if (!context.fContent.isNullOrBlank()) {
+            val count = chatEffectiveCounter.merge(context.groupId, 1) { old, one -> old + one }
             if (count!! < properties.stats.maxHistoryCount && context.fContent.length < properties.stats.maxMessageLength) {
-                val sb = chatHistory.computeIfAbsent(context.event.groupId) { StringBuilder() }
+                val sb = chatHistory.computeIfAbsent(context.groupId) { StringBuilder() }
                 synchronized(sb) {
                     sb.append(context.fContent).append(' ')
                 }
