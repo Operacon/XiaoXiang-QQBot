@@ -5,7 +5,10 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.random.Random
 
-class DivinationLot(private val plainText: String, private val fortuneLevel: Int) {
+/**
+ * 签实体类。obj 是 CQ 码构成的，fortuneLevel 是 7 个等级
+ */
+class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
     private val englishNegationRegex = Regex("\\bnot\\b", RegexOption.IGNORE_CASE)
     private val cqSegmentRegex = Regex("\\[CQ:[^\\]]*]")
     private val baseProbabilityBasisPoints: Int = buildBaseProbabilityBasisPoints(fortuneLevel)
@@ -35,9 +38,9 @@ class DivinationLot(private val plainText: String, private val fortuneLevel: Int
     }
 
     fun checkSim(candidateText: String): Int {
-        if (candidateText == plainText) return 0
+        if (candidateText == obj) return 0
 
-        val normalizedOriginal = normalizeSemanticText(removeNegation(plainText))
+        val normalizedOriginal = normalizeSemanticText(removeNegation(obj))
         val normalizedCandidate = normalizeSemanticText(removeNegation(candidateText))
 
         // 文本主体的反转距离：允许多维反转组合，取可匹配时的最小反转次数。
@@ -46,7 +49,7 @@ class DivinationLot(private val plainText: String, private val fortuneLevel: Int
 
         // “不/not”的数量差作为否定成本，最终距离 = 语义反转成本 + 否定成本。
         // 统计时同样忽略 [CQ: ... ] 段中的内容。
-        val negationCountDiff = abs(countNegation(candidateText) - countNegation(plainText))
+        val negationCountDiff = abs(countNegation(candidateText) - countNegation(obj))
         return semanticFlipCost + negationCountDiff
     }
 
