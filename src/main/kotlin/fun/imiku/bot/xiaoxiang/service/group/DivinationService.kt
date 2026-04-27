@@ -90,6 +90,52 @@ class DivinationService : GroupEventProcessor {
             return ProcessOption.STOP
         }
 
+        if (split[0] == "决定") {
+            if (split.size == 1) {
+                val msgBuilder = ArrayMsgUtils.builder()
+                    .reply(context.event.messageId)
+                    .at(context.userId)
+                    .text(" 所以想决定什么呢")
+                context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
+                return ProcessOption.STOP
+            }
+            val nSplit = split.drop(1)
+            // 无论纯文本还是富文本，只会被选择一份
+            if (nSplit.size == 1) {
+                val msgBuilder = ArrayMsgUtils.builder()
+                    .reply(context.event.messageId)
+                    .at(context.userId)
+                    .text(" 你已经决定好了")
+                context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
+                return ProcessOption.STOP
+            }
+            val msg = StringBuilder(
+                ArrayMsgUtils.builder().reply(context.event.messageId)
+                    .text(listOf("我觉得 ", "小湘觉得 ", "感觉 ", "我觉得 ").random())
+                    .buildCQ()
+            )
+            msg.append(
+                replaceYouAndMe(
+                    nSplit[divination(context.event.message, 0, nSplit.size - 1)]
+                )
+            )
+            context.xxBot.sendGroupMsgWithCount(context.groupId, msg.toString())
+            return ProcessOption.STOP
+        }
+
+        if (split[0] == "评价一下") {
+            val msg = listOf(
+                "就不评", "？我拒绝",
+                "鉴定为烂", "小湘觉得坏", "小湘觉得不怎么样", "感觉不太行",
+                "鉴定为好", "我觉得好", "感觉还行", "很厉害的样子"
+            )
+            val msgBuilder = ArrayMsgUtils.builder()
+                .reply(context.event.messageId)
+                .text(msg[divination(context.event.message, 0, msg.size - 1)])
+            context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
+            return ProcessOption.STOP
+        }
+
         return ProcessOption.CONTINUE
     }
 
@@ -98,7 +144,7 @@ class DivinationService : GroupEventProcessor {
      */
     private fun draw(obj: String, context: GroupEventContext, arrayMsg: MutableList<ArrayMsg> = mutableListOf()) {
         // 如果缓存不存在，增加缓存
-        val initList = mutableListOf(DivinationLot(obj))
+        val initList = mutableListOf(DivinationLot(obj, divination(obj)))
         val existingList = historyLotMap.putIfAbsent(context.userId, initList)
         if (existingList == null) {
             val msgBuilder = ArrayMsgUtils.builder().reply(context.event.messageId).text("所求事项：")
@@ -183,7 +229,7 @@ class DivinationService : GroupEventProcessor {
             }
             // 未命中，添加并发送
             if (!flag) {
-                list.add(DivinationLot(obj))
+                list.add(DivinationLot(obj, divination(obj)))
                 val msgBuilder = ArrayMsgUtils.builder()
                     .reply(context.event.messageId).text("所求事项：")
                 if (arrayMsg.isEmpty()) {
@@ -219,7 +265,7 @@ class DivinationService : GroupEventProcessor {
      */
     private fun prob(obj: String, context: GroupEventContext) {
         // 如果缓存不存在，增加缓存
-        val initList = mutableListOf(DivinationLot(obj))
+        val initList = mutableListOf(DivinationLot(obj, divination(obj)))
         val existingList = historyLotMap.putIfAbsent(context.userId, initList)
         if (existingList == null) {
             val msgBuilder = ArrayMsgUtils.builder()
@@ -256,7 +302,7 @@ class DivinationService : GroupEventProcessor {
             }
             // 未命中，添加并发送
             if (!flag) {
-                list.add(DivinationLot(obj))
+                list.add(DivinationLot(obj, divination(obj)))
                 val msgBuilder = ArrayMsgUtils.builder()
                     .reply(context.event.messageId)
                     .text(list.last().sendProbRet(1))
@@ -264,6 +310,40 @@ class DivinationService : GroupEventProcessor {
                 return
             }
         }
+    }
+
+    /**
+     * 根据所求事件进行占卜，返回一个 [low, high] 的值
+     */
+    private fun divination(obj: String, low: Int = -3, high: Int = 3): Int {
+        val runtime = Runtime.getRuntime()
+
+        val seed = buildString {
+            append(obj.trim())
+            append('|')
+            append(System.currentTimeMillis())
+            append('|')
+            append(runtime.freeMemory())
+            append('|')
+            append(Thread.currentThread().threadId())
+            append('|')
+            append(java.lang.management.ManagementFactory.getRuntimeMXBean().uptime)
+        }
+
+        val digest = java.security.MessageDigest
+            .getInstance("SHA-256")
+            .digest(seed.toByteArray(Charsets.UTF_8))
+
+        var mixed = 0L
+
+        for (i in digest.indices) {
+            val value = digest[i].toLong() and 0xffL
+            mixed = mixed xor (value shl ((i % 8) * 8))
+            mixed = mixed * 6364136223846793005L + 1442695040888963407L
+            mixed = mixed xor (mixed ushr 33)
+        }
+
+        return Math.floorMod(mixed, high - low + 1L).toInt() + low
     }
 
     private fun replaceYouAndMe(str: String): String {

@@ -7,10 +7,9 @@ import kotlin.random.Random
 /**
  * 签实体类。obj 是 CQ 码构成的，fortuneLevel 是 7 个等级
  */
-class DivinationLot(private val obj: String) {
+class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
     private val englishNegationRegex = Regex("\\bnot\\b", RegexOption.IGNORE_CASE)
     private val cqSegmentRegex = Regex("\\[CQ:[^]]*]")
-    private val fortuneLevel: Int = divination(obj)
     private val baseProbabilityBasisPoints: Int = buildBaseProbabilityBasisPoints(fortuneLevel)
     private val createdAt: LocalDateTime = LocalDateTime.now()
     private val semanticFlipTransforms: List<(String) -> String> = listOf(
@@ -55,41 +54,6 @@ class DivinationLot(private val obj: String) {
 
     fun isExpiredWith(minutes: Long): Boolean {
         return LocalDateTime.now().isAfter(createdAt.plusMinutes(minutes))
-    }
-
-    /**
-     * 根据所求事件进行占卜，返回 -3 到 3 的值
-     */
-    private fun divination(obj: String): Int {
-        val runtime = Runtime.getRuntime()
-
-        val seed = buildString {
-            append(obj.trim())
-            append('|')
-            append(System.currentTimeMillis())
-            append('|')
-            append(runtime.freeMemory())
-            append('|')
-            append(Thread.currentThread().threadId())
-            append('|')
-            append(java.lang.management.ManagementFactory.getRuntimeMXBean().uptime)
-        }
-
-        val digest = java.security.MessageDigest
-            .getInstance("SHA-256")
-            .digest(seed.toByteArray(Charsets.UTF_8))
-
-        var mixed = 0L
-
-        for (i in digest.indices) {
-            val value = digest[i].toLong() and 0xffL
-            mixed = mixed xor (value shl ((i % 8) * 8))
-            mixed = mixed * 6364136223846793005L + 1442695040888963407L
-            mixed = mixed xor (mixed ushr 33)
-        }
-
-        // 映射到 0..6，再平移到 -3..3
-        return Math.floorMod(mixed, 7L).toInt() - 3
     }
 
     private fun buildBaseProbabilityBasisPoints(level: Int): Int {
