@@ -1,16 +1,16 @@
 package `fun`.imiku.bot.xiaoxiang.model
 
 import java.time.LocalDateTime
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.random.Random
 
 /**
  * 签实体类。obj 是 CQ 码构成的，fortuneLevel 是 7 个等级
  */
-class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
+class DivinationLot(private val obj: String) {
     private val englishNegationRegex = Regex("\\bnot\\b", RegexOption.IGNORE_CASE)
-    private val cqSegmentRegex = Regex("\\[CQ:[^\\]]*]")
+    private val cqSegmentRegex = Regex("\\[CQ:[^]]*]")
+    private val fortuneLevel: Int = divination(obj)
     private val baseProbabilityBasisPoints: Int = buildBaseProbabilityBasisPoints(fortuneLevel)
     private val createdAt: LocalDateTime = LocalDateTime.now()
     private val semanticFlipTransforms: List<(String) -> String> = listOf(
@@ -20,9 +20,9 @@ class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
         ::swapColdHot
     )
 
-    fun sentRet(direction: Int): String = fortuneText(direction * fortuneLevel)
+    fun sendRet(direction: Int): String = fortuneText(direction * fortuneLevel)
 
-    fun sentProbRet(direction: Int): String {
+    fun sendProbRet(direction: Int): String {
         val describeAsOccurrence = Random.nextBoolean()
         val statementPolarity = if (describeAsOccurrence) 1 else -1
 
@@ -34,7 +34,7 @@ class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
         }
 
         val suffix = if (describeAsOccurrence) "的概率发生" else "的概率不发生"
-        return "${formatProbability(probabilityBasisPoints)}% $suffix"
+        return "此事有 ${formatProbability(probabilityBasisPoints)}% $suffix"
     }
 
     fun checkSim(candidateText: String): Int {
@@ -57,6 +57,41 @@ class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
         return LocalDateTime.now().isAfter(createdAt.plusMinutes(minutes))
     }
 
+    /**
+     * 根据所求事件进行占卜，返回 -3 到 3 的值
+     */
+    private fun divination(obj: String): Int {
+        val runtime = Runtime.getRuntime()
+
+        val seed = buildString {
+            append(obj.trim())
+            append('|')
+            append(System.currentTimeMillis())
+            append('|')
+            append(runtime.freeMemory())
+            append('|')
+            append(Thread.currentThread().threadId())
+            append('|')
+            append(java.lang.management.ManagementFactory.getRuntimeMXBean().uptime)
+        }
+
+        val digest = java.security.MessageDigest
+            .getInstance("SHA-256")
+            .digest(seed.toByteArray(Charsets.UTF_8))
+
+        var mixed = 0L
+
+        for (i in digest.indices) {
+            val value = digest[i].toLong() and 0xffL
+            mixed = mixed xor (value shl ((i % 8) * 8))
+            mixed = mixed * 6364136223846793005L + 1442695040888963407L
+            mixed = mixed xor (mixed ushr 33)
+        }
+
+        // 映射到 0..6，再平移到 -3..3
+        return Math.floorMod(mixed, 7L).toInt() - 3
+    }
+
     private fun buildBaseProbabilityBasisPoints(level: Int): Int {
         // 概率统一用基点计算（1% = 100 基点），最后再格式化成 xx.xx%。
         val integerPart = ((level + 3.0) * 14.285714).toInt() + Random.nextInt(0, 15)
@@ -65,10 +100,12 @@ class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
     }
 
     private fun formatProbability(basisPoints: Int): String {
-        val bounded = basisPoints.coerceIn(0, 10_000)
+        var bounded = basisPoints.coerceIn(0, 10_000)
+        // 概率随机抖动
+        bounded += Random.nextInt(-600, 600)
         val integerPart = bounded / 100
         val decimalPart = bounded % 100
-        return String.format(Locale.US, "%d.%02d", integerPart, decimalPart)
+        return String.format("%d.%02d", integerPart, decimalPart)
     }
 
     private fun fortuneText(score: Int): String {
