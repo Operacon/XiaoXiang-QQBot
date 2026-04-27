@@ -26,7 +26,7 @@ class XXBot(
     lateinit var bot: Bot
 
     /**
-     * 使用此方法获取 XXBot 实例。禁止从 Spring 容器直接获取或手动创建，否则易有异常
+     * 使用此方法获取 XXBot 实例。除非明白在做什么，禁止从 Spring 容器直接获取或手动创建，否则易有异常
      */
     fun bind(bot: Bot): XXBot {
         if (!::bot.isInitialized || this.bot !== bot) {

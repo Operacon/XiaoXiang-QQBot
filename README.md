@@ -49,6 +49,10 @@ TODO
 
 发送 `评价一下 [事项]` 让小湘做出评价。
 
+#### 统计
+
+每天零点自动发送前一天发言统计（若不为 0 ）。
+
 ## 相关仓库与致谢
 
 - [NapCat](https://github.com/NapNeko/NapCatQQ) 提供底层 QQ 服务
