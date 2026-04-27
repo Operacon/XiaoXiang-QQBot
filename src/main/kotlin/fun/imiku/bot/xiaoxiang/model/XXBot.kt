@@ -6,7 +6,7 @@ import com.mikuac.shiro.dto.action.common.MsgId
 import com.mikuac.shiro.dto.event.message.MessageEvent
 import com.mikuac.shiro.enums.MsgTypeEnum
 import com.mikuac.shiro.model.ArrayMsg
-import `fun`.imiku.bot.xiaoxiang.config.XiaoXiangProperties
+import `fun`.imiku.bot.xiaoxiang.config.ExternalProperties
 import `fun`.imiku.bot.xiaoxiang.service.group.GroupStatsService
 import jakarta.annotation.PostConstruct
 import org.springframework.stereotype.Component
@@ -20,7 +20,7 @@ import kotlin.random.Random
 @Component
 class XXBot(
     private val groupStatsService: GroupStatsService,
-    private val properties: XiaoXiangProperties
+    private val properties: ExternalProperties
 ) {
     @Volatile
     lateinit var bot: Bot

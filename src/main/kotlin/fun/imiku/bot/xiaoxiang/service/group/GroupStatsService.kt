@@ -2,7 +2,7 @@ package `fun`.imiku.bot.xiaoxiang.service.group
 
 import com.mikuac.shiro.common.utils.ArrayMsgUtils
 import com.mikuac.shiro.enums.MsgTypeEnum
-import `fun`.imiku.bot.xiaoxiang.config.XiaoXiangProperties
+import `fun`.imiku.bot.xiaoxiang.config.ExternalProperties
 import `fun`.imiku.bot.xiaoxiang.model.GroupEventContext
 import `fun`.imiku.bot.xiaoxiang.model.GroupEventProcessor
 import `fun`.imiku.bot.xiaoxiang.model.ProcessOption
@@ -17,7 +17,7 @@ import kotlin.random.Random
 @Order(10)
 @Service
 class GroupStatsService(
-    private val properties: XiaoXiangProperties
+    private val externalProperties: ExternalProperties
 ) : GroupEventProcessor {
     /**
      * 统计开始时间
@@ -91,7 +91,9 @@ class GroupStatsService(
             .forEach { chatImageCounter.merge(context.groupId, 1) { old, one -> old + one } }
         if (!context.fContent.isNullOrBlank()) {
             val count = chatEffectiveCounter.merge(context.groupId, 1) { old, one -> old + one }
-            if (count!! < properties.stats.maxHistoryCount && context.fContent.length < properties.stats.maxMessageLength) {
+            if (count!! < externalProperties.stats.maxHistoryCount
+                && context.fContent.length < externalProperties.stats.maxMessageLength
+            ) {
                 val sb = chatHistory.computeIfAbsent(context.groupId) { StringBuilder() }
                 synchronized(sb) {
                     sb.append(context.fContent).append(' ')

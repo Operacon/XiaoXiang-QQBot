@@ -30,6 +30,7 @@ dependencies {
     implementation("fun.imiku:napcat4j-spring-boot-starter:0.0.1-SNAPSHOT")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
+    implementation("org.slf4j:slf4j-api")
 }
 
 kotlin {
