@@ -50,6 +50,14 @@ public class ExternalProperties {
          * 复读概率
          */
         private float repeatProbability = 0.75f;
+        /**
+         * 戳一戳跟戳概率
+         */
+        private float pokeWithProbability = 0.5f;
+        /**
+         * 戳一戳回复概率
+         */
+        private float pokeBackProbability = 0.75f;
     }
 
     @Data
