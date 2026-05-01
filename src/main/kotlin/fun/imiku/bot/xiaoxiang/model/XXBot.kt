@@ -39,15 +39,27 @@ class XXBot(
         return this
     }
 
-    fun sendGroupMsgWithCount(groupId: Long, msg: String, autoEscape: Boolean = false): ActionData<MsgId> {
-        doRandomAwait()
+    fun sendGroupMsgWithCount(
+        groupId: Long,
+        msg: String,
+        autoEscape: Boolean = false,
+        randomWait: Boolean = true
+    ): ActionData<MsgId> {
+        if (randomWait)
+            doRandomAwait()
         val result = bot.sendGroupMsg(groupId, msg, autoEscape)
         groupStatsService.countBot(groupId)
         return result
     }
 
-    fun sendGroupMsgWithCount(groupId: Long, msg: List<ArrayMsg>, autoEscape: Boolean = false): ActionData<MsgId> {
-        doRandomAwait()
+    fun sendGroupMsgWithCount(
+        groupId: Long,
+        msg: List<ArrayMsg>,
+        autoEscape: Boolean = false,
+        randomWait: Boolean = true
+    ): ActionData<MsgId> {
+        if (randomWait)
+            doRandomAwait()
         val result = bot.sendGroupMsg(groupId, msg, autoEscape)
         groupStatsService.countBot(groupId)
         return result

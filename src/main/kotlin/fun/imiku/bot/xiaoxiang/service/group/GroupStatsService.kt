@@ -16,9 +16,7 @@ import kotlin.random.Random
 
 @Order(10)
 @Service
-class GroupStatsService(
-    private val externalProperties: ExternalProperties
-) : GroupEventProcessor {
+class GroupStatsService(private val externalProperties: ExternalProperties) : GroupEventProcessor {
     /**
      * 统计开始时间
      */
@@ -75,7 +73,6 @@ class GroupStatsService(
                             "bug 反馈或功能需求请联系 bot 主人或开 issue~"
                 )
             context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
-            sendStats(context.xxBot)
             return ProcessOption.STOP
         }
         return ProcessOption.CONTINUE
@@ -112,7 +109,7 @@ class GroupStatsService(
     /**
      * 发送每日统计
      */
-    fun sendStats(xxBot: XXBot) {
+    fun sendStats(xxBot: XXBot): Pair<Long, Long> {
         // 备份与清空。在这里同步地生成、发送，可能有助于缓解风控
         val oldStartedAt = startedAt
         startedAt = LocalDateTime.now()
@@ -126,6 +123,9 @@ class GroupStatsService(
         chatImageCounter = ConcurrentHashMap<Long, Long>()
         val oldChatBotCounter = chatBotCounter
         chatBotCounter = ConcurrentHashMap<Long, Long>()
+
+        var countSuccess = 0L
+        var countFail = 0L
 
         val sb = StringBuilder()
         if (oldStartedAt.hour != 0 || oldStartedAt.minute != 0 || oldStartedAt.second >= 15) {
@@ -156,8 +156,11 @@ class GroupStatsService(
                 ) + " 条~[CQ:face,id=" + Random.nextLong(222) + "]"
                 xxBot.bot.sendGroupMsg(groupId, msg, false)
                 // TODO: 词云实现
+                countSuccess++
             } catch (_: Exception) {
+                countFail++
             }
         }
+        return Pair(countSuccess, countFail)
     }
 }

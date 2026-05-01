@@ -17,6 +17,9 @@ class MessageUtil {
             options = setOf(RegexOption.IGNORE_CASE)
         )
 
+        @JvmStatic
+        private val cqUrlPatten = Regex("""url=[^,\]]*(?=[,\]])""")
+
 
         /**
          * 过滤群聊消息中的“无效”成分
@@ -50,6 +53,12 @@ class MessageUtil {
          */
         @JvmStatic
         fun splitContent(content: String): List<String> = content.split(splitPatten)
+
+        /**
+         * 删除 CQ 码中的 url
+         */
+        @JvmStatic
+        fun removeCqUrl(content: String): String = content.replace(cqUrlPatten, "")
 
         /**
          * message 按空格和 CQ 码切分

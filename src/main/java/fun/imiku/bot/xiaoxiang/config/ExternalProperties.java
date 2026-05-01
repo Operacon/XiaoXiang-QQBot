@@ -38,9 +38,19 @@ public class ExternalProperties {
 
 
     @Getter
+    private final Group group = new Group();
+    @Getter
     private final Stats stats = new Stats();
     @Getter
     private final Common common = new Common();
+
+    @Data
+    public static class Group {
+        /**
+         * 复读概率
+         */
+        private float repeatProbability = 0.75f;
+    }
 
     @Data
     public static class Stats {
@@ -64,7 +74,7 @@ public class ExternalProperties {
         /**
          * 发送消息时，随机等待的最少时间。可能有助于风控管理。只有 XXBot 实现的发送函数支持本配置
          */
-        private long  sendRandomAwaitMin = 100;
+        private long sendRandomAwaitMin = 100;
     }
 
     public ExternalProperties(XiaoXiangProperties xxProperties) {
