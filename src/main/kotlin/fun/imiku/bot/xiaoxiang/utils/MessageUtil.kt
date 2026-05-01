@@ -18,7 +18,7 @@ class MessageUtil {
         )
 
         @JvmStatic
-        private val cqUrlPatten = Regex("""url=[^,\]]*(?=[,\]])""")
+        private val cqUrlPatten = Regex(""",url=[^,\]]*(?=[,\]])""")
 
 
         /**

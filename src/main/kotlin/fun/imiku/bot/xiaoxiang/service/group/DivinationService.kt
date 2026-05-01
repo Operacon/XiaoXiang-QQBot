@@ -26,6 +26,7 @@ class DivinationService : GroupEventProcessor {
         // 保留 CQ 码的结果，使用 message 而非 plainText
         val split = MessageUtil.splitMessage(context.event.message)
         // 对富文本的支持是有限的：即使图片等完全相同，其链接也可能不同，因此无法判断是否是同一个消息。只有转发的情况链接一定会相同
+        // 260502: 尝试通过移除 url 兼容富文本
         val arrayMsg = context.event.arrayMsg
 
         if (split[0] == "求签") {
@@ -37,7 +38,7 @@ class DivinationService : GroupEventProcessor {
                 context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
                 return ProcessOption.STOP
             }
-            val obj = split.drop(1).joinToString(" ")
+            val obj = MessageUtil.removeCqUrl(split.drop(1).joinToString(" "))
             if (arrayMsg.size == 1) {
                 // 是纯文本消息
                 if (obj.isNotBlank())
@@ -68,7 +69,7 @@ class DivinationService : GroupEventProcessor {
                 context.xxBot.sendGroupMsgWithCount(context.groupId, msgBuilder.build())
                 return ProcessOption.STOP
             }
-            val obj = split.drop(1).joinToString(" ")
+            val obj = MessageUtil.removeCqUrl(split.drop(1).joinToString(" "))
             if (arrayMsg.size == 1) {
                 // 是纯文本消息
                 if (obj.isNotBlank())
