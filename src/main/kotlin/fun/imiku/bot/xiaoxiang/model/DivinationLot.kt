@@ -58,15 +58,16 @@ class DivinationLot(private val obj: String, private val fortuneLevel: Int) {
 
     private fun buildBaseProbabilityBasisPoints(level: Int): Int {
         // 概率统一用基点计算（1% = 100 基点），最后再格式化成 xx.xx%。
-        val integerPart = ((level + 3.0) * 14.285714).toInt() + Random.nextInt(0, 15)
+        val integerPart = ((level + 3.0) * 14.285714).toInt() + Random.nextInt(0, 12)
         val decimalPart = Random.nextInt(0, 100)
         return integerPart * 100 + decimalPart
     }
 
     private fun formatProbability(basisPoints: Int): String {
         var bounded = basisPoints.coerceIn(0, 10_000)
-        // 概率随机抖动
-        bounded += Random.nextInt(-600, 600)
+        // 每次概率随机抖动
+        bounded += Random.nextInt(-200, 200)
+        bounded = bounded.coerceIn(0, 10_000)
         val integerPart = bounded / 100
         val decimalPart = bounded % 100
         return String.format("%d.%02d", integerPart, decimalPart)
