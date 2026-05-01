@@ -31,6 +31,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     implementation("org.slf4j:slf4j-api")
+    implementation("org.springframework.boot:spring-boot-starter-aspectj")
 }
 
 kotlin {

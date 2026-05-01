@@ -1,8 +1,10 @@
 package fun.imiku.bot.xiaoxiang.config;
 
 import jakarta.annotation.PostConstruct;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.DeserializationFeature;
@@ -26,6 +28,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -45,6 +48,8 @@ public class ExternalProperties {
     private final Common common = new Common();
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Group {
         /**
          * 复读概率
@@ -61,6 +66,8 @@ public class ExternalProperties {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Stats {
         /**
          * 词云使用，每日群聊历史最大条数（受过长消息影响，实际最大条数会略小于配置值）
@@ -73,16 +80,66 @@ public class ExternalProperties {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Common {
         /**
          * 发送消息时，随机等待的最多时间。可能有助于风控管理。只有 XXBot 实现的发送函数支持本配置
          */
         private long sendRandomAwaitMax = 700;
-
         /**
          * 发送消息时，随机等待的最少时间。可能有助于风控管理。只有 XXBot 实现的发送函数支持本配置
          */
         private long sendRandomAwaitMin = 100;
+        /**
+         * bot 最大并发任务数，超过并发的任务将被丢弃
+         */
+        private long botMaxConcurrency = 100;
+        /**
+         * 每个用户的全局速率限制，留空则无限制。可以配置多级窗口
+         */
+        private List<RateLimitConfig> globalRateLimit = List.of(
+                new RateLimitConfig(60, 60, 5),
+                new RateLimitConfig(3600, 1000, 100)
+        );
+        /**
+         * 群聊的单用户默认速率限制，留空则无限制。可以配置多级窗口，可被 groupRateLimit 覆盖
+         */
+        private List<RateLimitConfig> defaultGroupRateLimit = List.of(
+                new RateLimitConfig(60, 30, 5),
+                new RateLimitConfig(3600, 300, 100)
+        );
+        /**
+         * 每个群聊的单用户速率限制，没有配置的群聊则无限制。可以配置多级窗口
+         */
+        private Map<Long, List<RateLimitConfig>> groupRateLimit = Map.of(
+                123456789L,
+                List.of(
+                        new RateLimitConfig(60, 10, 5),
+                        new RateLimitConfig(1800, 50, 10)
+                )
+        );
+    }
+
+    /**
+     * 速率限制配置块，稍后解析为 GCRA 算法参数
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RateLimitConfig {
+        /**
+         * 窗口长度
+         */
+        private long windowsSeconds;
+        /**
+         * 窗口内最大请求数
+         */
+        private long maxRequests;
+        /**
+         * 窗口内最大突发请求数
+         */
+        private long burstRequests;
     }
 
     public ExternalProperties(XiaoXiangProperties xxProperties) {

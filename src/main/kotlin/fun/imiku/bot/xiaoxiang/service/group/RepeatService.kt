@@ -54,15 +54,9 @@ class RepeatService(private val externalProperties: ExternalProperties) : GroupE
             }
         }
 
-        // 此时才真正发送复读
+        // 此时才真正发送复读，复读无需随机等待
         if (needSend && Random.nextFloat() < externalProperties.group.repeatProbability)
-            context.xxBot.sendGroupMsgWithCount(
-                context.groupId,
-                context.event.message,
-                autoEscape = false,
-                // 复读无需随机等待
-                randomWait = false
-            )
+            context.xxBot.sendGroupMsgWithCount(context.groupId, context.event.message, randomWait = false)
 
         return option
     }
