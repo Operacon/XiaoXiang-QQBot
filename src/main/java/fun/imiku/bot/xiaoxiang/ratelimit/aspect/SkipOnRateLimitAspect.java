@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-public class SkipOnReteLimitAspect {
+public class SkipOnRateLimitAspect {
     @Around("@annotation(fun.imiku.bot.xiaoxiang.ratelimit.annotation.SkipOnRateLimit)")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         // TODO

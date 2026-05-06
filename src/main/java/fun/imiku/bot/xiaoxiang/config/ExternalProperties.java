@@ -92,10 +92,6 @@ public class ExternalProperties {
          */
         private long sendRandomAwaitMin = 100;
         /**
-         * bot 最大并发任务数，超过并发的任务将被丢弃
-         */
-        private long botMaxConcurrency = 100;
-        /**
          * 每个用户的全局速率限制，留空则无限制。可以配置多级窗口
          */
         private List<RateLimitConfig> globalRateLimit = List.of(

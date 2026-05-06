@@ -11,9 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -99,28 +97,6 @@ public class XXRateLimiter {
         }
     }
 
-    /**
-     * 尝试获取一个全局 bot 并发许可。
-     *
-     * @return 需要释放的许可；如果已经达到并发上限，则返回 null
-     */
-    public Permit obtain() {
-        Snapshot current = currentSnapshot();
-        if (!current.semaphore.tryAcquire()) {
-            return null;
-        }
-        return new Permit(current.semaphore);
-    }
-
-    /**
-     * 释放由 obtain 获取到的并发许可。
-     */
-    public void release(Permit permit) {
-        if (permit != null) {
-            permit.release();
-        }
-    }
-
     private Snapshot currentSnapshot() {
         Snapshot current = snapshot.get();
         if (current != null) {
@@ -141,26 +117,6 @@ public class XXRateLimiter {
         return states.computeIfAbsent(key, ignored -> new GcraState(windows.size()));
     }
 
-    public static final class Permit implements AutoCloseable {
-        private final Semaphore semaphore;
-        private final AtomicBoolean released = new AtomicBoolean(false);
-
-        private Permit(Semaphore semaphore) {
-            this.semaphore = semaphore;
-        }
-
-        public void release() {
-            if (released.compareAndSet(false, true)) {
-                semaphore.release();
-            }
-        }
-
-        @Override
-        public void close() {
-            release();
-        }
-    }
-
     private static final class Snapshot {
         private final List<GcraWindow> globalWindows;
         private final List<GcraWindow> defaultGroupWindows;
@@ -168,18 +124,15 @@ public class XXRateLimiter {
         // 状态跟随配置快照保存；applyConfig 替换快照时，旧状态会自然失效。
         private final Map<Long, GcraState> globalStates = new HashMap<>();
         private final Map<GroupUserKey, GcraState> groupStates = new HashMap<>();
-        private final Semaphore semaphore;
 
         private Snapshot(
                 List<GcraWindow> globalWindows,
                 List<GcraWindow> defaultGroupWindows,
-                Map<Long, List<GcraWindow>> groupWindows,
-                Semaphore semaphore
+                Map<Long, List<GcraWindow>> groupWindows
         ) {
             this.globalWindows = globalWindows;
             this.defaultGroupWindows = defaultGroupWindows;
             this.groupWindows = groupWindows;
-            this.semaphore = semaphore;
         }
 
         private static Snapshot from(ExternalProperties.Common common) {
@@ -187,8 +140,7 @@ public class XXRateLimiter {
             return new Snapshot(
                     toWindows(common.getGlobalRateLimit(), "common.globalRateLimit"),
                     toWindows(common.getDefaultGroupRateLimit(), "common.defaultGroupRateLimit"),
-                    toGroupWindows(common.getGroupRateLimit()),
-                    new Semaphore(toSemaphorePermits(common.getBotMaxConcurrency()), true)
+                    toGroupWindows(common.getGroupRateLimit())
             );
         }
 
@@ -237,16 +189,6 @@ public class XXRateLimiter {
             windows.put(groupId, toWindows(groupConfigs, "common.groupRateLimit[" + groupId + "]"));
         });
         return Map.copyOf(windows);
-    }
-
-    private static int toSemaphorePermits(long configuredPermits) {
-        if (configuredPermits < 0) {
-            throw new IllegalArgumentException("common.botMaxConcurrency must not be negative");
-        }
-        if (configuredPermits > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("common.botMaxConcurrency must not exceed " + Integer.MAX_VALUE);
-        }
-        return (int) configuredPermits;
     }
 
     private record GcraWindow(long intervalNanos, long toleranceNanos) {
