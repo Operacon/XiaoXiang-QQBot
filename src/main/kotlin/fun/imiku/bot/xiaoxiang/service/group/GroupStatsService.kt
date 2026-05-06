@@ -6,8 +6,11 @@ import `fun`.imiku.bot.xiaoxiang.config.ExternalProperties
 import `fun`.imiku.bot.xiaoxiang.model.GroupEventContext
 import `fun`.imiku.bot.xiaoxiang.model.GroupEventProcessor
 import `fun`.imiku.bot.xiaoxiang.model.ProcessOption
-import `fun`.imiku.bot.xiaoxiang.model.XXBot
+import `fun`.imiku.bot.xiaoxiang.utils.log
+import `fun`.imiku.napcat4j.dto.request.SendMsgRequest
+import `fun`.imiku.napcat4j.service.MessageService
 import org.springframework.core.annotation.Order
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -16,7 +19,10 @@ import kotlin.random.Random
 
 @Order(10)
 @Service
-class GroupStatsService(private val externalProperties: ExternalProperties) : GroupEventProcessor {
+class GroupStatsService(
+    private val externalProperties: ExternalProperties,
+    private val messageService: MessageService
+) : GroupEventProcessor {
     /**
      * 统计开始时间
      */
@@ -109,7 +115,8 @@ class GroupStatsService(private val externalProperties: ExternalProperties) : Gr
     /**
      * 发送每日统计
      */
-    fun sendStats(xxBot: XXBot): Pair<Long, Long> {
+    @Scheduled(cron = "1 0 0 * * *", zone = "Asia/Shanghai")
+    fun sendStats() {
         // 备份与清空。在这里同步地生成、发送，可能有助于缓解风控
         val oldStartedAt = startedAt
         startedAt = LocalDateTime.now()
@@ -138,9 +145,12 @@ class GroupStatsService(private val externalProperties: ExternalProperties) : Gr
         }
         sb.append("#TOTAL 条，其中图片 #IMAGE 张\n废话率为 #RATIO% ~")
 
+        val req = SendMsgRequest()
+        req.autoEscape = false
         val fmt = sb.toString()
         oldAllCounter.forEach { (groupId, cnt) ->
             try {
+                req.groupId = groupId
                 var msg = fmt.replace("#TOTAL", cnt.toString())
                     .replace("#IMAGE", oldChatImageCounter.getOrDefault(groupId, 0).toString())
                     .replace(
@@ -148,19 +158,21 @@ class GroupStatsService(private val externalProperties: ExternalProperties) : Gr
                             (cnt - oldEffectiveCounter.getOrDefault(groupId, 0)).toDouble() / cnt
                         )
                     )
-                xxBot.bot.sendGroupMsg(groupId, msg, false)
+                req.message = msg
+                messageService.sendMsg(req)
                 Thread.sleep(Random.nextLong(800))
                 msg = "小湘发言 " + oldChatBotCounter.getOrDefault(
                     groupId,
                     0
                 ) + " 条~[CQ:face,id=" + Random.nextLong(222) + "]"
-                xxBot.bot.sendGroupMsg(groupId, msg, false)
+                req.message = msg
+                messageService.sendMsg(req)
                 // TODO: 词云实现
                 countSuccess++
             } catch (_: Exception) {
                 countFail++
             }
         }
-        return Pair(countSuccess, countFail)
+        log.info("已发送昨日群聊统计，成功 {} 个，失败 {} 个", countSuccess, countFail)
     }
 }
